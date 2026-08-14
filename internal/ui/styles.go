@@ -52,6 +52,15 @@ func setRows(t *table.Model, rows []table.Row) {
 	}
 }
 
+// truncateLine keeps footer errors on one line within the terminal width.
+func truncateLine(s string, width int) string {
+	limit := max(width-2, 40)
+	if len(s) <= limit {
+		return s
+	}
+	return s[:limit] + "…"
+}
+
 func formatTime(iso string) string {
 	t, err := time.Parse(time.RFC3339, iso)
 	if err != nil {

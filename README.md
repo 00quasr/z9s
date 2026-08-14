@@ -37,6 +37,39 @@ z9s --addr http://host:8080  # any other cluster
 z9s --dump                   # one plain-text snapshot, no TUI
 ```
 
+## Connecting to real clusters
+
+z9s reads [c8ctl](https://docs.camunda.io/docs/apis-tools/c8ctl/getting-started/)
+profiles (read-only; interop tested against c8ctl v3.3.0) — any cluster added
+with `c8ctl add profile` just works:
+
+```sh
+c8ctl add profile work --baseUrl https://camunda.corp.example/v2 \
+  --clientId z9s --clientSecret … --oAuthUrl https://idp.corp.example/token \
+  --audience camunda-api
+z9s --profile work
+```
+
+Resolution order: `--profile` flag → c8ctl's active profile (`c8ctl use
+profile`) → `CAMUNDA_*` env vars (when `CAMUNDA_BASE_URL` is set) → the
+`local` profile → built-in fallback (`http://localhost:8080`, basic
+`demo`/`demo` — c8run's default; an auth-disabled cluster ignores the
+header). The header always shows which profile and auth mode are active.
+
+Auth mode is inferred from the profile: client id + secret → OAuth
+client-credentials (SaaS: token URL `https://login.cloud.camunda.io/oauth/token`,
+audience `zeebe.camunda.io`, base URL `https://{region}.api.camunda.io/{clusterId}`;
+Self-Managed: your IdP's token endpoint and configured audience), username +
+password → HTTP Basic (8.8+ Self-Managed), neither → unauthenticated.
+
+Env vars (c8ctl-compatible): `CAMUNDA_BASE_URL`, `CAMUNDA_CLIENT_ID`,
+`CAMUNDA_CLIENT_SECRET`, `CAMUNDA_OAUTH_URL`, `CAMUNDA_TOKEN_AUDIENCE`,
+`CAMUNDA_OAUTH_SCOPE`, `CAMUNDA_USERNAME`, `CAMUNDA_PASSWORD`.
+
+Credential safety: `--addr` **alone** always connects unauthenticated to
+exactly that address; combine `--addr` with `--profile` to point a profile's
+credentials at a different address deliberately.
+
 ## Keys
 
 | Key | Action |

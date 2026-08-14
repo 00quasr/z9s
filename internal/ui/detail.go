@@ -53,7 +53,7 @@ func newDetailScreen(client *camunda.Client, processInstanceKey string) *detailS
 func (m *detailScreen) Init() tea.Cmd { return m.fetch }
 
 func (m *detailScreen) fetch() tea.Msg {
-	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 	defer cancel()
 
 	snap := detailSnapshot{key: m.key, fetchedAt: time.Now()}
@@ -242,7 +242,7 @@ func (m *detailScreen) View() string {
 		b.WriteString("\n")
 	}
 	if m.snap.err != nil {
-		b.WriteString(errStyle.Render("error: " + m.snap.err.Error()))
+		b.WriteString(errStyle.Render(truncateLine("error: "+m.snap.err.Error(), m.width)))
 	} else if !m.snap.fetchedAt.IsZero() {
 		b.WriteString(dimStyle.Render("refreshed " + m.snap.fetchedAt.Format("15:04:05")))
 	}

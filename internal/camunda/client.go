@@ -18,10 +18,28 @@ type Client struct {
 	http    *http.Client
 }
 
-func NewClient(baseURL string) *Client {
+// NewClient builds a client for the cluster at baseURL (no trailing /v2).
+// rt attaches authentication (see auth.go); nil means unauthenticated.
+func NewClient(baseURL string, rt http.RoundTripper) *Client {
+	if rt == nil {
+		rt = http.DefaultTransport
+	}
 	return &Client{
 		baseURL: baseURL,
-		http:    &http.Client{Timeout: 10 * time.Second},
+		http: &http.Client{
+			// Generous enough for a cold start that includes an OAuth
+			// token round-trip (bounded separately at 10s) plus the call.
+			Timeout:   15 * time.Second,
+			Transport: rt,
+			// Auth headers are injected at the transport layer, so refuse
+			// cross-host redirects rather than leak credentials.
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				if len(via) > 0 && req.URL.Host != via[0].URL.Host {
+					return fmt.Errorf("refusing cross-host redirect to %s", req.URL.Host)
+				}
+				return nil
+			},
+		},
 	}
 }
 
@@ -227,6 +245,9 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 		return err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		return fmt.Errorf("%s %s: unauthorized (check credentials): %s", method, path, resp.Status)
+	}
 	if resp.StatusCode >= 300 {
 		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 		return fmt.Errorf("%s %s: %s: %s", method, path, resp.Status, msg)

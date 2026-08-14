@@ -5,12 +5,14 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/00quasr/z9s/internal/camunda"
+	"github.com/00quasr/z9s/internal/config"
 	"github.com/00quasr/z9s/internal/ui"
 )
 
@@ -22,7 +24,8 @@ var (
 )
 
 func main() {
-	addr := flag.String("addr", "http://localhost:8080", "base URL of the Camunda 8 Orchestration Cluster REST API")
+	addr := flag.String("addr", "", "cluster base URL; alone = unauthenticated connection, with --profile = address override keeping that profile's auth (default: resolved from profile)")
+	profileFlag := flag.String("profile", "", "c8ctl profile to connect with (default: session active profile, then \"local\")")
 	dump := flag.Bool("dump", false, "print one snapshot as plain text and exit (no TUI)")
 	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
@@ -32,17 +35,36 @@ func main() {
 		return
 	}
 
-	client := camunda.NewClient(*addr)
+	prof, warnings, err := config.Resolve(*profileFlag, *addr)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "z9s:", err)
+		os.Exit(1)
+	}
+	for _, w := range warnings {
+		fmt.Fprintln(os.Stderr, "z9s:", w)
+	}
+
+	var rt http.RoundTripper
+	switch prof.Auth {
+	case config.AuthBasic:
+		rt = camunda.BasicAuthTransport(prof.Username, prof.Password)
+	case config.AuthOAuth:
+		rt = camunda.OAuthTransport(prof.OAuthURL, prof.ClientID, prof.ClientSecret, prof.Audience, prof.Scope)
+	}
+	client := camunda.NewClient(prof.BaseURL, rt)
 
 	if *dump {
-		if err := dumpSnapshot(client, *addr); err != nil {
+		if label := prof.Label(); label != "" {
+			fmt.Fprintf(os.Stderr, "z9s: profile %s [%s]\n", label, prof.Source)
+		}
+		if err := dumpSnapshot(client, prof.BaseURL); err != nil {
 			fmt.Fprintln(os.Stderr, "z9s:", err)
 			os.Exit(1)
 		}
 		return
 	}
 
-	p := tea.NewProgram(ui.NewApp(client, *addr, version), tea.WithAltScreen())
+	p := tea.NewProgram(ui.NewApp(client, prof.BaseURL, version, prof.Label()), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "z9s:", err)
 		os.Exit(1)

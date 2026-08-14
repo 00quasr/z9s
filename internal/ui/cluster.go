@@ -48,6 +48,7 @@ type clusterScreen struct {
 	client  *camunda.Client
 	addr    string
 	version string
+	profile string
 
 	active view
 	tables [viewCount]table.Model
@@ -57,8 +58,8 @@ type clusterScreen struct {
 	height int
 }
 
-func newClusterScreen(client *camunda.Client, addr, version string) *clusterScreen {
-	m := &clusterScreen{client: client, addr: addr, version: version, active: viewInstances}
+func newClusterScreen(client *camunda.Client, addr, version, profile string) *clusterScreen {
+	m := &clusterScreen{client: client, addr: addr, version: version, profile: profile, active: viewInstances}
 	for v := view(0); v < viewCount; v++ {
 		t := newTable()
 		t.Focus()
@@ -70,7 +71,7 @@ func newClusterScreen(client *camunda.Client, addr, version string) *clusterScre
 func (m *clusterScreen) Init() tea.Cmd { return m.fetch }
 
 func (m *clusterScreen) fetch() tea.Msg {
-	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 	defer cancel()
 
 	snap := clusterSnapshot{fetchedAt: time.Now()}
@@ -268,6 +269,11 @@ func (m *clusterScreen) View() string {
 	var b strings.Builder
 
 	b.WriteString(headerStyle.Render(" z9s " + m.version + " "))
+	if m.profile != "" {
+		b.WriteString(dimStyle.Render("· profile "))
+		b.WriteString(headerStyle.Render(m.profile))
+		b.WriteString(dimStyle.Render(" "))
+	}
 	if t := m.snap.topology; t != nil {
 		health := healthyStyle.Render("healthy")
 		for _, br := range t.Brokers {
@@ -312,7 +318,7 @@ func (m *clusterScreen) View() string {
 		b.WriteString("\n")
 	}
 	if m.snap.err != nil {
-		b.WriteString(errStyle.Render("error: " + m.snap.err.Error()))
+		b.WriteString(errStyle.Render(truncateLine("error: "+m.snap.err.Error(), m.width)))
 	} else if !m.snap.fetchedAt.IsZero() {
 		status := fmt.Sprintf("refreshed %s", m.snap.fetchedAt.Format("15:04:05"))
 		if m.snap.incTotal > 0 {
