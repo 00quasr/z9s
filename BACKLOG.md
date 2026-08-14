@@ -27,8 +27,9 @@ Once the repo is on GitHub, migrate these to issues.
 
 ## Connectivity & config
 
-- [ ] Config file `~/.config/z9s/config.yml` with named clusters (like kubeconfig contexts)
-- [ ] Bearer-token auth for SaaS / Self-Managed with identity enabled
+- [x] Named clusters via read-only c8ctl profile interop (`--profile`, session active profile, `CAMUNDA_*` env)
+- [x] Auth for SaaS / Self-Managed: OAuth client-credentials + HTTP Basic, inferred per profile
+- [ ] In-TUI profile switcher
 - [ ] Graceful reconnect banner when the cluster goes away mid-session
 
 ## Polish & distribution
@@ -42,5 +43,6 @@ Once the repo is on GitHub, migrate these to issues.
 
 ## Testing
 
-- [ ] httptest-based unit tests for the camunda client (topology + three searches)
+- [x] httptest-based unit tests for the camunda client (auth transports: basic, OAuth caching/401-retry/expiry edges)
+- [ ] httptest-based unit tests for the search/action endpoints
 - [ ] teatest golden-file test for the instances view
