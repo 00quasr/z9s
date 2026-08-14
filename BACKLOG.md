@@ -13,9 +13,10 @@ Once the repo is on GitHub, migrate these to issues.
 
 ## Actions (what Operate makes you click for)
 
-- [ ] `ctrl+r` on an incident: resolve it (`POST /v2/jobs/{jobKey}` update retries, then `POST /v2/incidents/{incidentKey}/resolution`)
-- [ ] `ctrl+k` on an instance: cancel it, with a y/n confirm prompt
-- [ ] `s` on a definition: start an instance (empty variables first; variable editor later)
+- [x] `ctrl+r` on an incident: resolve it (`PATCH /v2/jobs/{jobKey}` restores retries, then `POST /v2/incidents/{incidentKey}/resolution`)
+- [x] `ctrl+k` on an instance: cancel it, with a y/n confirm prompt
+- [x] `s` on a definition: start an instance (empty variables first; variable editor later)
+- [ ] Variable editor when starting an instance
 
 ## Filtering & search
 

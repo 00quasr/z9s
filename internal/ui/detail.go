@@ -37,6 +37,7 @@ type detailScreen struct {
 	elements  table.Model
 	variables table.Model
 	focus     detailPane
+	flash     string
 	width     int
 	height    int
 }
@@ -91,6 +92,13 @@ func (m *detailScreen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		m.snap = msg
 		m.rebuildTables()
 		return m, nil
+	case actionDoneMsg:
+		if msg.err != nil {
+			m.flash = errStyle.Render(msg.err.Error())
+		} else {
+			m.flash = healthyStyle.Render(msg.note)
+		}
+		return m, m.fetch
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "tab":
@@ -98,6 +106,21 @@ func (m *detailScreen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 			return m, nil
 		case "r":
 			return m, m.fetch
+		case "ctrl+r":
+			if len(m.snap.incidents) > 0 {
+				client, in := m.client, m.snap.incidents[0]
+				return m, runAction("resolved incident "+in.IncidentKey, func(ctx context.Context) error {
+					return client.ResolveIncident(ctx, in.IncidentKey, in.JobKey)
+				})
+			}
+			return m, nil
+		case "ctrl+k":
+			client, key := m.client, m.key
+			return m, pushScreen(newConfirmScreen(
+				"Cancel process instance "+key+"?",
+				runAction("cancelled instance "+key, func(ctx context.Context) error {
+					return client.CancelProcessInstance(ctx, key)
+				})))
 		}
 	}
 	var cmd tea.Cmd
@@ -214,12 +237,20 @@ func (m *detailScreen) View() string {
 	b.WriteString(m.variables.View())
 	b.WriteString("\n")
 
+	if m.flash != "" {
+		b.WriteString(m.flash)
+		b.WriteString("\n")
+	}
 	if m.snap.err != nil {
 		b.WriteString(errStyle.Render("error: " + m.snap.err.Error()))
 	} else if !m.snap.fetchedAt.IsZero() {
 		b.WriteString(dimStyle.Render("refreshed " + m.snap.fetchedAt.Format("15:04:05")))
 	}
-	b.WriteString(dimStyle.Render("  ·  esc back · tab focus · r refresh · q quit"))
+	hint := "  ·  esc back · tab focus"
+	if len(m.snap.incidents) > 0 {
+		hint += " · ctrl+r resolve"
+	}
+	b.WriteString(dimStyle.Render(hint + " · ctrl+k cancel · r refresh · q quit"))
 	return b.String()
 }
 

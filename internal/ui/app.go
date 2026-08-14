@@ -21,6 +21,14 @@ func pushScreen(s Screen) tea.Cmd {
 	return func() tea.Msg { return pushMsg{screen: s} }
 }
 
+type popMsg struct{}
+
+// popScreen is used by screens to dismiss themselves (e.g. a declined
+// confirm modal).
+func popScreen() tea.Cmd {
+	return func() tea.Msg { return popMsg{} }
+}
+
 // App is the root model: it owns the screen stack, global keys
 // (quit, esc-to-back), the refresh tick, and window sizing.
 type App struct {
@@ -66,6 +74,19 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		s, _ := msg.screen.Update(tea.WindowSizeMsg{Width: a.width, Height: a.height})
 		a.stack = append(a.stack, s)
 		return a, s.Init()
+
+	case popMsg:
+		return a.pop()
+
+	case actionDoneMsg:
+		// The action was launched from a confirm modal (or directly from
+		// a list); either way the screen below shows the outcome.
+		if len(a.stack) > 1 {
+			if _, ok := a.stack[len(a.stack)-1].(*confirmScreen); ok {
+				a.stack = a.stack[:len(a.stack)-1]
+			}
+		}
+		return a.updateTop(msg)
 	}
 
 	return a.updateTop(msg)

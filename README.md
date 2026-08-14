@@ -46,6 +46,9 @@ z9s --dump                   # one plain-text snapshot, no TUI
 | `↑` / `↓` | move selection |
 | `enter` | open instance detail (from an instance or incident row) |
 | `esc` | back |
+| `ctrl+r` | resolve the selected incident (restores job retries first) |
+| `ctrl+k` | cancel the selected instance — asks for confirmation |
+| `s` | start an instance of the selected definition |
 | `r` | refresh now (auto-refresh every 5s) |
 | `q` | quit |
 

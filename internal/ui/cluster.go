@@ -51,6 +51,7 @@ type clusterScreen struct {
 	active view
 	tables [viewCount]table.Model
 	snap   clusterSnapshot
+	flash  string
 	width  int
 	height int
 }
@@ -107,6 +108,13 @@ func (m *clusterScreen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		m.snap = msg
 		m.rebuildTables()
 		return m, nil
+	case actionDoneMsg:
+		if msg.err != nil {
+			m.flash = errStyle.Render(msg.err.Error())
+		} else {
+			m.flash = healthyStyle.Render(msg.note)
+		}
+		return m, m.fetch
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "1":
@@ -128,6 +136,35 @@ func (m *clusterScreen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 				return m, pushScreen(newDetailScreen(m.client, key))
 			}
 			return m, nil
+		case "ctrl+k":
+			if key := m.selectedInstanceKey(); key != "" && m.active == viewInstances {
+				client := m.client
+				return m, pushScreen(newConfirmScreen(
+					"Cancel process instance "+key+"?",
+					runAction("cancelled instance "+key, func(ctx context.Context) error {
+						return client.CancelProcessInstance(ctx, key)
+					})))
+			}
+			return m, nil
+		case "ctrl+r":
+			if in := m.selectedIncident(); in != nil {
+				client, ik, jk := m.client, in.IncidentKey, in.JobKey
+				return m, runAction("resolved incident "+ik, func(ctx context.Context) error {
+					return client.ResolveIncident(ctx, ik, jk)
+				})
+			}
+			return m, nil
+		case "s":
+			if m.active == viewDefinitions {
+				if row := m.tables[viewDefinitions].SelectedRow(); row != nil {
+					client, dk := m.client, row[0]
+					return m, runAction("started instance of "+row[1], func(ctx context.Context) error {
+						_, err := client.CreateProcessInstance(ctx, dk)
+						return err
+					})
+				}
+			}
+			return m, nil
 		}
 	}
 	var cmd tea.Cmd
@@ -147,13 +184,27 @@ func (m *clusterScreen) selectedInstanceKey() string {
 	case viewInstances:
 		return row[0]
 	case viewIncidents:
-		for _, in := range m.snap.incidents {
-			if in.IncidentKey == row[0] {
-				return in.ProcessInstanceKey
-			}
+		if in := m.selectedIncident(); in != nil {
+			return in.ProcessInstanceKey
 		}
 	}
 	return ""
+}
+
+func (m *clusterScreen) selectedIncident() *camunda.Incident {
+	if m.active != viewIncidents {
+		return nil
+	}
+	row := m.tables[viewIncidents].SelectedRow()
+	if row == nil {
+		return nil
+	}
+	for i := range m.snap.incidents {
+		if m.snap.incidents[i].IncidentKey == row[0] {
+			return &m.snap.incidents[i]
+		}
+	}
+	return nil
 }
 
 func (m *clusterScreen) rebuildTables() {
@@ -255,6 +306,10 @@ func (m *clusterScreen) View() string {
 	b.WriteString(m.tables[m.active].View())
 	b.WriteString("\n")
 
+	if m.flash != "" {
+		b.WriteString(m.flash)
+		b.WriteString("\n")
+	}
 	if m.snap.err != nil {
 		b.WriteString(errStyle.Render("error: " + m.snap.err.Error()))
 	} else if !m.snap.fetchedAt.IsZero() {
@@ -266,6 +321,15 @@ func (m *clusterScreen) View() string {
 		}
 		b.WriteString(status)
 	}
-	b.WriteString(dimStyle.Render("  ·  enter details · 1/2/3 switch · tab cycle · r refresh · q quit"))
+	hint := "enter details"
+	switch m.active {
+	case viewInstances:
+		hint += " · ctrl+k cancel"
+	case viewDefinitions:
+		hint = "s start instance"
+	case viewIncidents:
+		hint += " · ctrl+r resolve"
+	}
+	b.WriteString(dimStyle.Render("  ·  " + hint + " · 1/2/3 switch · tab cycle · r refresh · q quit"))
 	return b.String()
 }

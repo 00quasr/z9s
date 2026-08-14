@@ -129,8 +129,10 @@ func (c *Client) SearchProcessInstances(ctx context.Context, limit int) ([]Proce
 	return search[ProcessInstance](ctx, c, "/v2/process-instances/search", nil, limit)
 }
 
+// SearchIncidents returns unresolved incidents. Resolved ones linger in
+// the secondary-storage index with state RESOLVED, so filter them out.
 func (c *Client) SearchIncidents(ctx context.Context, limit int) ([]Incident, int, error) {
-	return search[Incident](ctx, c, "/v2/incidents/search", nil, limit)
+	return search[Incident](ctx, c, "/v2/incidents/search", map[string]any{"state": "ACTIVE"}, limit)
 }
 
 // GetProcessInstance fetches a single instance via a key-filtered search.
@@ -154,7 +156,38 @@ func (c *Client) SearchVariables(ctx context.Context, processInstanceKey string)
 }
 
 func (c *Client) SearchInstanceIncidents(ctx context.Context, processInstanceKey string) ([]Incident, int, error) {
-	return search[Incident](ctx, c, "/v2/incidents/search", byInstance(processInstanceKey), 100)
+	filter := map[string]any{"processInstanceKey": processInstanceKey, "state": "ACTIVE"}
+	return search[Incident](ctx, c, "/v2/incidents/search", filter, 100)
+}
+
+// ResolveIncident marks an incident as resolved so the engine retries the
+// failed element. For job-related incidents the job must have retries
+// again first, or the incident immediately reappears.
+func (c *Client) ResolveIncident(ctx context.Context, incidentKey, jobKey string) error {
+	if jobKey != "" {
+		body := map[string]any{"changeset": map[string]any{"retries": 3}}
+		if err := c.do(ctx, http.MethodPatch, "/v2/jobs/"+jobKey, body, nil); err != nil {
+			return err
+		}
+	}
+	return c.do(ctx, http.MethodPost, "/v2/incidents/"+incidentKey+"/resolution", struct{}{}, nil)
+}
+
+func (c *Client) CancelProcessInstance(ctx context.Context, processInstanceKey string) error {
+	return c.do(ctx, http.MethodPost, "/v2/process-instances/"+processInstanceKey+"/cancellation", struct{}{}, nil)
+}
+
+// CreateProcessInstance starts an instance of the exact definition version
+// behind processDefinitionKey and returns the new instance key.
+func (c *Client) CreateProcessInstance(ctx context.Context, processDefinitionKey string) (string, error) {
+	body := map[string]any{"processDefinitionKey": processDefinitionKey}
+	var res struct {
+		ProcessInstanceKey string `json:"processInstanceKey"`
+	}
+	if err := c.do(ctx, http.MethodPost, "/v2/process-instances", body, &res); err != nil {
+		return "", err
+	}
+	return res.ProcessInstanceKey, nil
 }
 
 func byInstance(key string) map[string]any {
@@ -197,6 +230,9 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 	if resp.StatusCode >= 300 {
 		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 		return fmt.Errorf("%s %s: %s: %s", method, path, resp.Status, msg)
+	}
+	if out == nil || resp.StatusCode == http.StatusNoContent {
+		return nil
 	}
 	return json.NewDecoder(resp.Body).Decode(out)
 }
