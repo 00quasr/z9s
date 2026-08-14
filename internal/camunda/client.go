@@ -70,6 +70,28 @@ type ProcessInstance struct {
 	ProcessDefinitionKey     string  `json:"processDefinitionKey"`
 }
 
+type ElementInstance struct {
+	ProcessDefinitionID string  `json:"processDefinitionId"`
+	StartDate           string  `json:"startDate"`
+	EndDate             *string `json:"endDate"`
+	ElementID           string  `json:"elementId"`
+	ElementName         string  `json:"elementName"`
+	Type                string  `json:"type"`
+	State               string  `json:"state"`
+	HasIncident         bool    `json:"hasIncident"`
+	ElementInstanceKey  string  `json:"elementInstanceKey"`
+	ProcessInstanceKey  string  `json:"processInstanceKey"`
+	IncidentKey         *string `json:"incidentKey"`
+}
+
+type Variable struct {
+	Name        string `json:"name"`
+	Value       string `json:"value"`
+	IsTruncated bool   `json:"isTruncated"`
+	VariableKey string `json:"variableKey"`
+	ScopeKey    string `json:"scopeKey"`
+}
+
 type Incident struct {
 	ProcessDefinitionID string `json:"processDefinitionId"`
 	ErrorType           string `json:"errorType"`
@@ -100,19 +122,50 @@ func (c *Client) Topology(ctx context.Context) (*Topology, error) {
 }
 
 func (c *Client) SearchProcessDefinitions(ctx context.Context, limit int) ([]ProcessDefinition, int, error) {
-	return search[ProcessDefinition](ctx, c, "/v2/process-definitions/search", limit)
+	return search[ProcessDefinition](ctx, c, "/v2/process-definitions/search", nil, limit)
 }
 
 func (c *Client) SearchProcessInstances(ctx context.Context, limit int) ([]ProcessInstance, int, error) {
-	return search[ProcessInstance](ctx, c, "/v2/process-instances/search", limit)
+	return search[ProcessInstance](ctx, c, "/v2/process-instances/search", nil, limit)
 }
 
 func (c *Client) SearchIncidents(ctx context.Context, limit int) ([]Incident, int, error) {
-	return search[Incident](ctx, c, "/v2/incidents/search", limit)
+	return search[Incident](ctx, c, "/v2/incidents/search", nil, limit)
 }
 
-func search[T any](ctx context.Context, c *Client, path string, limit int) ([]T, int, error) {
+// GetProcessInstance fetches a single instance via a key-filtered search.
+func (c *Client) GetProcessInstance(ctx context.Context, key string) (*ProcessInstance, error) {
+	items, _, err := search[ProcessInstance](ctx, c, "/v2/process-instances/search", byInstance(key), 1)
+	if err != nil {
+		return nil, err
+	}
+	if len(items) == 0 {
+		return nil, fmt.Errorf("process instance %s not found", key)
+	}
+	return &items[0], nil
+}
+
+func (c *Client) SearchElementInstances(ctx context.Context, processInstanceKey string) ([]ElementInstance, int, error) {
+	return search[ElementInstance](ctx, c, "/v2/element-instances/search", byInstance(processInstanceKey), 100)
+}
+
+func (c *Client) SearchVariables(ctx context.Context, processInstanceKey string) ([]Variable, int, error) {
+	return search[Variable](ctx, c, "/v2/variables/search", byInstance(processInstanceKey), 100)
+}
+
+func (c *Client) SearchInstanceIncidents(ctx context.Context, processInstanceKey string) ([]Incident, int, error) {
+	return search[Incident](ctx, c, "/v2/incidents/search", byInstance(processInstanceKey), 100)
+}
+
+func byInstance(key string) map[string]any {
+	return map[string]any{"processInstanceKey": key}
+}
+
+func search[T any](ctx context.Context, c *Client, path string, filter map[string]any, limit int) ([]T, int, error) {
 	body := map[string]any{"page": map[string]any{"limit": limit}}
+	if filter != nil {
+		body["filter"] = filter
+	}
 	var res searchResult[T]
 	if err := c.do(ctx, http.MethodPost, path, body, &res); err != nil {
 		return nil, 0, err

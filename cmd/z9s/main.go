@@ -29,7 +29,7 @@ func main() {
 		return
 	}
 
-	p := tea.NewProgram(ui.NewModel(client, *addr), tea.WithAltScreen())
+	p := tea.NewProgram(ui.NewApp(client, *addr), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "z9s:", err)
 		os.Exit(1)

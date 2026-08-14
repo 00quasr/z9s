@@ -1,0 +1,36 @@
+version: 2
+project_name: z9s
+
+builds:
+  - main: ./cmd/z9s
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: github
+
+# Homebrew tap — enable once the 00quasr/homebrew-tap repo exists and a
+# TAP_GITHUB_TOKEN secret (PAT with repo scope) is set on this repo:
+# homebrew_casks:
+#   - repository:
+#       owner: 00quasr
+#       name: homebrew-tap
+#       token: "{{ .Env.TAP_GITHUB_TOKEN }}"

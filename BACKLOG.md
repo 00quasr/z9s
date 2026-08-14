@@ -6,10 +6,10 @@ Once the repo is on GitHub, migrate these to issues.
 
 ## Drill-down (the core loop)
 
-- [ ] `enter` on an instance opens a detail view: element instance tree (`POST /v2/element-instances/search` filtered by `processInstanceKey`)
-- [ ] Detail view: show instance variables (`POST /v2/variables/search`)
-- [ ] `enter` on an incident jumps to its process instance detail
-- [ ] `esc` navigates back from detail to the list
+- [x] `enter` on an instance opens a detail view: element instance tree (`POST /v2/element-instances/search` filtered by `processInstanceKey`)
+- [x] Detail view: show instance variables (`POST /v2/variables/search`)
+- [x] `enter` on an incident jumps to its process instance detail
+- [x] `esc` navigates back from detail to the list
 
 ## Actions (what Operate makes you click for)
 
@@ -35,7 +35,7 @@ Once the repo is on GitHub, migrate these to issues.
 - [ ] Column widths adapt to terminal width instead of fixed values
 - [ ] Incident age column (humanized: "3m", "2h")
 - [ ] Header sparkline: instances started per refresh interval
-- [ ] GoReleaser config: tagged releases with darwin/linux/windows binaries
+- [x] GoReleaser config: tagged releases with darwin/linux/windows binaries (tag `vX.Y.Z` + push to trigger)
 - [ ] Homebrew tap
 - [ ] Demo GIF in the README (vhs tape)
 

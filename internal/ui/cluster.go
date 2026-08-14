@@ -1,4 +1,3 @@
-// Package ui implements the z9s terminal interface.
 package ui
 
 import (
@@ -9,12 +8,9 @@ import (
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 
 	"github.com/00quasr/z9s/internal/camunda"
 )
-
-const refreshInterval = 5 * time.Second
 
 type view int
 
@@ -37,17 +33,7 @@ func (v view) title() string {
 	return ""
 }
 
-var (
-	headerStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("39")).Bold(true)
-	dimStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
-	tabStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("250")).Padding(0, 1)
-	activeTab     = lipgloss.NewStyle().Foreground(lipgloss.Color("16")).Background(lipgloss.Color("39")).Bold(true).Padding(0, 1)
-	errStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
-	healthyStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("42"))
-	incidentStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("208"))
-)
-
-type snapshot struct {
+type clusterSnapshot struct {
 	topology    *camunda.Topology
 	definitions []camunda.ProcessDefinition
 	instances   []camunda.ProcessInstance
@@ -58,45 +44,34 @@ type snapshot struct {
 	fetchedAt   time.Time
 }
 
-type tickMsg time.Time
-
-type Model struct {
+type clusterScreen struct {
 	client *camunda.Client
 	addr   string
 
 	active view
 	tables [viewCount]table.Model
-	snap   snapshot
+	snap   clusterSnapshot
 	width  int
 	height int
 }
 
-func NewModel(client *camunda.Client, addr string) Model {
-	m := Model{client: client, addr: addr, active: viewInstances}
+func newClusterScreen(client *camunda.Client, addr string) *clusterScreen {
+	m := &clusterScreen{client: client, addr: addr, active: viewInstances}
 	for v := view(0); v < viewCount; v++ {
-		t := table.New(table.WithFocused(true), table.WithHeight(15))
-		s := table.DefaultStyles()
-		s.Header = s.Header.BorderStyle(lipgloss.NormalBorder()).BorderBottom(true).Bold(true)
-		s.Selected = s.Selected.Foreground(lipgloss.Color("16")).Background(lipgloss.Color("39")).Bold(false)
-		t.SetStyles(s)
+		t := newTable()
+		t.Focus()
 		m.tables[v] = t
 	}
 	return m
 }
 
-func (m Model) Init() tea.Cmd {
-	return tea.Batch(m.fetch, tick())
-}
+func (m *clusterScreen) Init() tea.Cmd { return m.fetch }
 
-func tick() tea.Cmd {
-	return tea.Tick(refreshInterval, func(t time.Time) tea.Msg { return tickMsg(t) })
-}
-
-func (m Model) fetch() tea.Msg {
+func (m *clusterScreen) fetch() tea.Msg {
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
 
-	snap := snapshot{fetchedAt: time.Now()}
+	snap := clusterSnapshot{fetchedAt: time.Now()}
 	var err error
 	if snap.topology, err = m.client.Topology(ctx); err != nil {
 		snap.err = err
@@ -117,7 +92,7 @@ func (m Model) fetch() tea.Msg {
 	return snap
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *clusterScreen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
@@ -125,25 +100,34 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.tables[v].SetHeight(max(5, m.height-8))
 		}
 		m.rebuildTables()
-	case tickMsg:
-		return m, tea.Batch(m.fetch, tick())
-	case snapshot:
+		return m, nil
+	case tickMsg, refreshMsg:
+		return m, m.fetch
+	case clusterSnapshot:
 		m.snap = msg
 		m.rebuildTables()
+		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "q", "ctrl+c":
-			return m, tea.Quit
 		case "1":
 			m.active = viewInstances
+			return m, nil
 		case "2":
 			m.active = viewDefinitions
+			return m, nil
 		case "3":
 			m.active = viewIncidents
+			return m, nil
 		case "tab":
 			m.active = (m.active + 1) % viewCount
+			return m, nil
 		case "r":
 			return m, m.fetch
+		case "enter":
+			if key := m.selectedInstanceKey(); key != "" {
+				return m, pushScreen(newDetailScreen(m.client, key))
+			}
+			return m, nil
 		}
 	}
 	var cmd tea.Cmd
@@ -151,7 +135,28 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *Model) rebuildTables() {
+// selectedInstanceKey resolves the process-instance key behind the
+// selected row: directly on the instances view, via the owning instance
+// on the incidents view.
+func (m *clusterScreen) selectedInstanceKey() string {
+	row := m.tables[m.active].SelectedRow()
+	if row == nil {
+		return ""
+	}
+	switch m.active {
+	case viewInstances:
+		return row[0]
+	case viewIncidents:
+		for _, in := range m.snap.incidents {
+			if in.IncidentKey == row[0] {
+				return in.ProcessInstanceKey
+			}
+		}
+	}
+	return ""
+}
+
+func (m *clusterScreen) rebuildTables() {
 	w := max(m.width, 100)
 
 	m.tables[viewInstances].SetColumns([]table.Column{
@@ -173,7 +178,7 @@ func (m *Model) rebuildTables() {
 			fmt.Sprint(pi.ProcessDefinitionVersion), pi.State, inc, formatTime(pi.StartDate),
 		})
 	}
-	m.tables[viewInstances].SetRows(rows)
+	setRows(&m.tables[viewInstances], rows)
 
 	m.tables[viewDefinitions].SetColumns([]table.Column{
 		{Title: "KEY", Width: 20},
@@ -189,7 +194,7 @@ func (m *Model) rebuildTables() {
 			fmt.Sprint(pd.Version), pd.ResourceName,
 		})
 	}
-	m.tables[viewDefinitions].SetRows(rows)
+	setRows(&m.tables[viewDefinitions], rows)
 
 	m.tables[viewIncidents].SetColumns([]table.Column{
 		{Title: "KEY", Width: 20},
@@ -204,10 +209,10 @@ func (m *Model) rebuildTables() {
 			in.IncidentKey, in.ProcessDefinitionID, in.ElementID, in.ErrorType, in.ErrorMessage,
 		})
 	}
-	m.tables[viewIncidents].SetRows(rows)
+	setRows(&m.tables[viewIncidents], rows)
 }
 
-func (m Model) View() string {
+func (m *clusterScreen) View() string {
 	var b strings.Builder
 
 	b.WriteString(headerStyle.Render(" z9s "))
@@ -261,14 +266,6 @@ func (m Model) View() string {
 		}
 		b.WriteString(status)
 	}
-	b.WriteString(dimStyle.Render("  ·  1/2/3 switch · tab cycle · r refresh · q quit"))
+	b.WriteString(dimStyle.Render("  ·  enter details · 1/2/3 switch · tab cycle · r refresh · q quit"))
 	return b.String()
-}
-
-func formatTime(iso string) string {
-	t, err := time.Parse(time.RFC3339, iso)
-	if err != nil {
-		return iso
-	}
-	return t.Local().Format("2006-01-02 15:04:05")
 }
