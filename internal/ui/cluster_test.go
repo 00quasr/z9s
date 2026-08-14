@@ -9,7 +9,7 @@ import (
 )
 
 func TestEnterOnInstancePushesDetail(t *testing.T) {
-	m := newClusterScreen(nil, "http://test")
+	m := newClusterScreen(nil, "http://test", "dev")
 	// The initial resize arrives before any data in the real app; with
 	// bubbles v1.0.0 this pinned the table cursor at -1 (see setRows).
 	s, _ := m.Update(tea.WindowSizeMsg{Width: 140, Height: 38})

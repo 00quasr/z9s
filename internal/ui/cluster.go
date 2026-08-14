@@ -45,8 +45,9 @@ type clusterSnapshot struct {
 }
 
 type clusterScreen struct {
-	client *camunda.Client
-	addr   string
+	client  *camunda.Client
+	addr    string
+	version string
 
 	active view
 	tables [viewCount]table.Model
@@ -56,8 +57,8 @@ type clusterScreen struct {
 	height int
 }
 
-func newClusterScreen(client *camunda.Client, addr string) *clusterScreen {
-	m := &clusterScreen{client: client, addr: addr, active: viewInstances}
+func newClusterScreen(client *camunda.Client, addr, version string) *clusterScreen {
+	m := &clusterScreen{client: client, addr: addr, version: version, active: viewInstances}
 	for v := view(0); v < viewCount; v++ {
 		t := newTable()
 		t.Focus()
@@ -266,7 +267,7 @@ func (m *clusterScreen) rebuildTables() {
 func (m *clusterScreen) View() string {
 	var b strings.Builder
 
-	b.WriteString(headerStyle.Render(" z9s "))
+	b.WriteString(headerStyle.Render(" z9s " + m.version + " "))
 	if t := m.snap.topology; t != nil {
 		health := healthyStyle.Render("healthy")
 		for _, br := range t.Brokers {

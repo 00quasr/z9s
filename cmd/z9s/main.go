@@ -14,10 +14,23 @@ import (
 	"github.com/00quasr/z9s/internal/ui"
 )
 
+// Injected by GoReleaser via ldflags; "dev" for plain go build/install.
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
 	addr := flag.String("addr", "http://localhost:8080", "base URL of the Camunda 8 Orchestration Cluster REST API")
 	dump := flag.Bool("dump", false, "print one snapshot as plain text and exit (no TUI)")
+	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("z9s %s (%s, %s)\n", version, commit, date)
+		return
+	}
 
 	client := camunda.NewClient(*addr)
 
@@ -29,7 +42,7 @@ func main() {
 		return
 	}
 
-	p := tea.NewProgram(ui.NewApp(client, *addr), tea.WithAltScreen())
+	p := tea.NewProgram(ui.NewApp(client, *addr, version), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "z9s:", err)
 		os.Exit(1)

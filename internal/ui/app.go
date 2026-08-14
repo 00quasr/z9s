@@ -37,8 +37,8 @@ type App struct {
 	height int
 }
 
-func NewApp(client *camunda.Client, addr string) App {
-	return App{stack: []Screen{newClusterScreen(client, addr)}}
+func NewApp(client *camunda.Client, addr, version string) App {
+	return App{stack: []Screen{newClusterScreen(client, addr, version)}}
 }
 
 func (a App) Init() tea.Cmd {

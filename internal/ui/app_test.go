@@ -9,7 +9,7 @@ import (
 )
 
 func TestAppEnterPushesDetailScreen(t *testing.T) {
-	app := NewApp(nil, "http://test")
+	app := NewApp(nil, "http://test", "dev")
 	model, _ := app.Update(clusterSnapshot{
 		instances: []camunda.ProcessInstance{{ProcessInstanceKey: "123", ProcessDefinitionID: "demo", State: "ACTIVE"}},
 	})
@@ -31,7 +31,7 @@ func TestAppEnterPushesDetailScreen(t *testing.T) {
 }
 
 func TestConfirmModalFlow(t *testing.T) {
-	app := NewApp(nil, "http://test")
+	app := NewApp(nil, "http://test", "dev")
 	fired := false
 	action := func() tea.Msg { fired = true; return actionDoneMsg{note: "done"} }
 
