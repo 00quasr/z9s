@@ -27,10 +27,18 @@ checksum:
 changelog:
   use: github
 
-# Homebrew tap — enable once the 00quasr/homebrew-tap repo exists and a
-# TAP_GITHUB_TOKEN secret (PAT with repo scope) is set on this repo:
-# homebrew_casks:
+# Auto-bump the formula in 00quasr/homebrew-tap on each release.
+# Requires a TAP_GITHUB_TOKEN secret on this repo (fine-grained PAT with
+# contents:write on homebrew-tap): gh secret set TAP_GITHUB_TOKEN
+# Until the secret exists, keep this commented — GoReleaser fails the
+# release if the env var is missing.
+# brews:
 #   - repository:
 #       owner: 00quasr
 #       name: homebrew-tap
 #       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+#     directory: Formula
+#     homepage: https://github.com/00quasr/z9s
+#     description: k9s-style terminal UI for Camunda 8 / Zeebe
+#     test: |
+#       assert_match "-addr", shell_output("#{bin}/z9s --help 2>&1")

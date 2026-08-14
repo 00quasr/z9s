@@ -36,7 +36,7 @@ Once the repo is on GitHub, migrate these to issues.
 - [ ] Incident age column (humanized: "3m", "2h")
 - [ ] Header sparkline: instances started per refresh interval
 - [x] GoReleaser config: tagged releases with darwin/linux/windows binaries (tag `vX.Y.Z` + push to trigger)
-- [ ] Homebrew tap
+- [x] Homebrew tap (`brew install 00quasr/tap/z9s`; auto-bump via GoReleaser `brews` once TAP_GITHUB_TOKEN secret exists)
 - [ ] Demo GIF in the README (vhs tape)
 
 ## Testing

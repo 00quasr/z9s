@@ -8,6 +8,12 @@ error messages, one-key navigation, auto-refresh.
 
 ## Install
 
+With Homebrew (macOS / Linux):
+
+```sh
+brew install 00quasr/tap/z9s
+```
+
 With Go ≥ 1.22:
 
 ```sh
