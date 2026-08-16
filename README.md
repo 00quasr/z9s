@@ -6,6 +6,10 @@
 cluster in the terminal: live tables of process instances, incidents with their
 error messages, one-key navigation, auto-refresh.
 
+<img width="895" height="951" alt="Screenshot 2026-08-16 at 21 15 02" src="https://github.com/user-attachments/assets/9270ee20-78e4-48b0-87d7-d32ba537343a" />
+<img width="885" height="932" alt="Screenshot 2026-08-16 at 21 15 23" src="https://github.com/user-attachments/assets/1d7e2593-3e30-44c6-9ebf-c5ea86e72ce1" />
+<img width="894" height="984" alt="Screenshot 2026-08-16 at 21 33 57" src="https://github.com/user-attachments/assets/354b5edf-2959-445b-813c-d8f6ece6cc9b" />
+
 ## Install
 
 With Homebrew (macOS / Linux):
