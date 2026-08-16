@@ -198,7 +198,20 @@ func (c *Client) CancelProcessInstance(ctx context.Context, processInstanceKey s
 // CreateProcessInstance starts an instance of the exact definition version
 // behind processDefinitionKey and returns the new instance key.
 func (c *Client) CreateProcessInstance(ctx context.Context, processDefinitionKey string) (string, error) {
-	body := map[string]any{"processDefinitionKey": processDefinitionKey}
+	return c.createInstance(ctx, map[string]any{"processDefinitionKey": processDefinitionKey})
+}
+
+// CreateProcessInstanceByID starts an instance of the latest version of the
+// given process (BPMN process id), with optional start variables.
+func (c *Client) CreateProcessInstanceByID(ctx context.Context, processDefinitionID string, variables map[string]any) (string, error) {
+	body := map[string]any{"processDefinitionId": processDefinitionID}
+	if variables != nil {
+		body["variables"] = variables
+	}
+	return c.createInstance(ctx, body)
+}
+
+func (c *Client) createInstance(ctx context.Context, body map[string]any) (string, error) {
 	var res struct {
 		ProcessInstanceKey string `json:"processInstanceKey"`
 	}
@@ -206,6 +219,51 @@ func (c *Client) CreateProcessInstance(ctx context.Context, processDefinitionKey
 		return "", err
 	}
 	return res.ProcessInstanceKey, nil
+}
+
+// Job is an activated job as returned by /v2/jobs/activation.
+type Job struct {
+	JobKey             string         `json:"jobKey"`
+	Type               string         `json:"type"`
+	ProcessInstanceKey string         `json:"processInstanceKey"`
+	ElementID          string         `json:"elementId"`
+	Retries            int            `json:"retries"`
+	Variables          map[string]any `json:"variables"`
+}
+
+func (c *Client) ActivateJobs(ctx context.Context, jobType, worker string, maxJobs int, timeout time.Duration) ([]Job, error) {
+	body := map[string]any{
+		"type":              jobType,
+		"worker":            worker,
+		"maxJobsToActivate": maxJobs,
+		"timeout":           timeout.Milliseconds(),
+	}
+	var res struct {
+		Jobs []Job `json:"jobs"`
+	}
+	if err := c.do(ctx, http.MethodPost, "/v2/jobs/activation", body, &res); err != nil {
+		return nil, err
+	}
+	return res.Jobs, nil
+}
+
+func (c *Client) CompleteJob(ctx context.Context, jobKey string, variables map[string]any) error {
+	body := map[string]any{}
+	if variables != nil {
+		body["variables"] = variables
+	}
+	return c.do(ctx, http.MethodPost, "/v2/jobs/"+jobKey+"/completion", body, nil)
+}
+
+func (c *Client) FailJob(ctx context.Context, jobKey string, retries int, errorMessage string) error {
+	body := map[string]any{"retries": retries, "errorMessage": errorMessage}
+	return c.do(ctx, http.MethodPost, "/v2/jobs/"+jobKey+"/failure", body, nil)
+}
+
+// ThrowJobError raises a BPMN error that a boundary event can catch.
+func (c *Client) ThrowJobError(ctx context.Context, jobKey, errorCode, errorMessage string) error {
+	body := map[string]any{"errorCode": errorCode, "errorMessage": errorMessage}
+	return c.do(ctx, http.MethodPost, "/v2/jobs/"+jobKey+"/error", body, nil)
 }
 
 func byInstance(key string) map[string]any {

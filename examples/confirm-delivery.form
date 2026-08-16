@@ -1,0 +1,38 @@
+{
+  "components": [
+    {
+      "type": "text",
+      "text": "### Confirm delivery\n\nCheck the shipment and confirm the order reached the customer.",
+      "id": "Text_Header",
+      "layout": { "row": "row_0", "columns": null }
+    },
+    {
+      "type": "textfield",
+      "id": "Field_OrderId",
+      "key": "orderId",
+      "label": "Order ID",
+      "readonly": true,
+      "layout": { "row": "row_1", "columns": null }
+    },
+    {
+      "type": "checkbox",
+      "id": "Field_DeliveryOk",
+      "key": "deliveryOk",
+      "label": "Delivered in good condition",
+      "layout": { "row": "row_2", "columns": null }
+    },
+    {
+      "type": "textarea",
+      "id": "Field_DeliveryNotes",
+      "key": "deliveryNotes",
+      "label": "Notes",
+      "layout": { "row": "row_3", "columns": null }
+    }
+  ],
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.8.0",
+  "exporter": { "name": "Camunda Modeler", "version": "5.34.0" },
+  "schemaVersion": 18,
+  "id": "confirm-delivery",
+  "type": "default"
+}

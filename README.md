@@ -92,17 +92,24 @@ timing in the header, an incident banner with the error message, the element
 instance history showing exactly where the token sits, and the instance's
 variables.
 
-## Demo data
+## Demo data & traffic simulator
 
-`examples/z9s-demo.bpmn` is a tiny order process whose service task
-(`z9s-demo-payment`) has no worker, so instances stay visibly ACTIVE:
+`examples/order-fulfillment.bpmn` is a realistic process — parallel
+inventory/payment branches, an error boundary for declined payments, a
+pickup timer, and a user task with a form. `z9s-sim` drives it like a busy
+production system: instances started continuously, workers with latency,
+transient failures, declined payments, and occasional exhausted-retries
+incidents.
 
 ```sh
-curl -X POST localhost:8080/v2/deployments -F "resources=@examples/z9s-demo.bpmn"
-curl -X POST localhost:8080/v2/process-instances \
-  -H 'Content-Type: application/json' \
-  -d '{"processDefinitionId":"z9s-demo","variables":{"orderId":"ORD-1","amount":250}}'
+curl -X POST localhost:8080/v2/deployments \
+  -F "resources=@examples/order-fulfillment.bpmn" \
+  -F "resources=@examples/confirm-delivery.form"
+go run ./cmd/z9s-sim --rate 20 --burst 8   # ctrl+c to stop
 ```
+
+`examples/z9s-demo.bpmn` is the minimal variant: one workerless service
+task (`z9s-demo-payment`), so instances just stay visibly ACTIVE.
 
 ## Status
 
