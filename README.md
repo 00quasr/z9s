@@ -1,8 +1,6 @@
 # z9s
 
 <div align="center">
-  <img src="assets/logo.svg" width="140" alt="z9s logo" />
-
   <p><strong>k9s for Camunda 8</strong> — a terminal UI for Zeebe process instances, definitions, and incidents.</p>
 
   <p>

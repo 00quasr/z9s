@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
-  <rect width="160" height="160" rx="32" fill="#1a1d21"/>
-  <text x="46" y="103" font-family="Menlo, Consolas, 'DejaVu Sans Mono', monospace" font-size="62" font-weight="bold" fill="#39d353">&#10095;</text>
-  <rect x="90" y="58" width="20" height="46" fill="#39d353">
-    <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.45;0.5;0.95;1" dur="1.4s" repeatCount="indefinite"/>
-  </rect>
-</svg>
