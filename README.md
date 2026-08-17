@@ -1,6 +1,27 @@
 # z9s
 
-> k9s for Camunda 8. A terminal UI for Zeebe process instances, definitions, and incidents.
+<div align="center">
+  <img src="assets/logo.svg" width="140" alt="z9s logo" />
+
+  <p><strong>k9s for Camunda 8</strong> — a terminal UI for Zeebe process instances, definitions, and incidents.</p>
+
+  <p>
+    <a href="#install">install</a> ·
+    <a href="#quick-start">quick start</a> ·
+    <a href="#keys">keys</a> ·
+    <a href="BACKLOG.md">roadmap</a>
+  </p>
+
+  <p>
+    <a href="https://github.com/00quasr/z9s/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/00quasr/z9s/ci.yml?branch=main&label=ci" alt="CI status" /></a>
+    <a href="https://github.com/00quasr/z9s/releases"><img src="https://img.shields.io/github/v/release/00quasr/z9s?label=release" alt="Latest release" /></a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/00quasr/z9s?label=license" alt="License" /></a>
+    <a href="https://github.com/00quasr/homebrew-tap"><img src="https://img.shields.io/badge/homebrew-00quasr%2Ftap-orange" alt="Homebrew tap" /></a>
+    <a href="https://goreportcard.com/report/github.com/00quasr/z9s"><img src="https://goreportcard.com/badge/github.com/00quasr/z9s" alt="Go Report Card" /></a>
+    <a href="https://github.com/00quasr/z9s/releases"><img src="https://img.shields.io/github/downloads/00quasr/z9s/total?label=downloads" alt="Downloads" /></a>
+    <a href="https://github.com/00quasr/z9s/stargazers"><img src="https://img.shields.io/github/stars/00quasr/z9s?style=flat&label=stars" alt="GitHub stars" /></a>
+  </p>
+</div>
 
 `zbctl` is bare-bones and Operate is a heavy web UI — z9s puts your orchestration
 cluster in the terminal: live tables of process instances, incidents with their
@@ -117,6 +138,7 @@ task (`z9s-demo-payment`), so instances just stay visibly ACTIVE.
 
 ## Status
 
-Early. Read-only views of instances, definitions, and incidents against an
-unauthenticated local cluster. See [BACKLOG.md](BACKLOG.md) for what's next —
-the project is built one small step per day.
+Young but capable: views with drill-down, incident resolution, instance
+cancel/start, and authentication (basic + OAuth via c8ctl profiles) against
+local, Self-Managed, or SaaS clusters. See [BACKLOG.md](BACKLOG.md) for
+what's next — the project is built one small step per day.
