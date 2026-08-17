@@ -8,8 +8,6 @@ error messages, one-key navigation, auto-refresh.
 
 <img width="895" height="951" alt="Screenshot 2026-08-16 at 21 15 02" src="https://github.com/user-attachments/assets/9270ee20-78e4-48b0-87d7-d32ba537343a" />
 
-<img width="894" height="984" alt="Screenshot 2026-08-16 at 21 33 57" src="https://github.com/user-attachments/assets/354b5edf-2959-445b-813c-d8f6ece6cc9b" />
-
 ## Install
 
 With Homebrew (macOS / Linux):
@@ -73,6 +71,8 @@ Env vars (c8ctl-compatible): `CAMUNDA_BASE_URL`, `CAMUNDA_CLIENT_ID`,
 Credential safety: `--addr` **alone** always connects unauthenticated to
 exactly that address; combine `--addr` with `--profile` to point a profile's
 credentials at a different address deliberately.
+
+<img width="885" height="932" alt="Screenshot 2026-08-16 at 21 15 23" src="https://github.com/user-attachments/assets/f7e2d59f-13ed-4dab-a864-c12496a61289" />
 
 ## Keys
 
