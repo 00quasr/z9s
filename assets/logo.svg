@@ -1,12 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
-  <rect width="160" height="160" rx="24" fill="#e9e9e6"/>
-  <rect x="22" y="32" width="116" height="96" rx="10" fill="#24292f"/>
-  <circle cx="38" cy="47" r="4" fill="#ff5f57"/>
-  <circle cx="52" cy="47" r="4" fill="#febc2e"/>
-  <circle cx="66" cy="47" r="4" fill="#28c840"/>
-  <text x="34" y="101" font-family="Menlo, Consolas, 'DejaVu Sans Mono', monospace" font-size="30" fill="#39d353">&#10095;</text>
-  <text x="56" y="101" font-family="Menlo, Consolas, 'DejaVu Sans Mono', monospace" font-size="30" font-weight="bold" fill="#f0f6fc">z9s</text>
-  <rect x="116" y="78" width="11" height="27" fill="#39d353">
+  <rect width="160" height="160" rx="32" fill="#1a1d21"/>
+  <text x="46" y="103" font-family="Menlo, Consolas, 'DejaVu Sans Mono', monospace" font-size="62" font-weight="bold" fill="#39d353">&#10095;</text>
+  <rect x="90" y="58" width="20" height="46" fill="#39d353">
     <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.45;0.5;0.95;1" dur="1.4s" repeatCount="indefinite"/>
   </rect>
 </svg>
